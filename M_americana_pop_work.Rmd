@@ -1,0 +1,1450 @@
+---
+output: html_document
+editor_options: 
+  chunk_output_type: console
+---
+```{r}
+setwd("~/Documents/work/Smart_lab/P_capsici/isolate_collection/paper/pop_structure/")
+if (!requireNamespace("BiocManager", quietly = TRUE))
+    install.packages("BiocManager")
+
+BiocManager::install("pcaMethods")
+library(pcaMethods)
+library(ape)
+library(RColorBrewer)
+library(StAMPP)
+library(ggplot2)
+library(poppr)
+library(vcfR)
+library(adegenet)
+library(mmod)
+library(magrittr)
+library(dplyr)
+library(treemap)
+
+
+library(apex)
+library(adegenet)
+library(pegas)
+library(mmod)
+library(poppr)
+
+```
+
+
+
+
+```{r}
+# filtered, not clone corrected data for all years of collection
+
+m_amer_full_vcf <- read.vcfR( "~/gbs_pop_work/m_americana_paper_snp/2_2_21_work/m_americana_vcftools_full_filt_and_remove.vcf", verbose = FALSE )
+m_amer_full_genind <- vcfR2genind(m_amer_full_vcf)
+
+m_amer_full_genlight <- vcfR2genlight(m_amer_full_vcf)
+
+pop(m_amer_full_genind) <- lat_long_dist_meta_all_with_group$X.2
+strata(m_amer_full_genind) <- lat_long_dist_meta_all_with_group$X.2
+m_amer_full_genclone <- as.genclone(m_amer_full_genind)
+m_amer_full_genclone$strata
+
+Aeutamova <- poppr.amova(m_amer_full_genclone, ~pop)
+
+
+m_amer_full_meta <- read.delim("~/gbs_pop_work/m_americana_paper_snp/m_americana_mata.txt")
+
+#tree for full americana data
+getwd()
+setwd("C:/Users/super/Documents/gbs_pop_work/m_americana_paper_snp/2_2_21_work")
+tree_full <- aboot(m_amer_full_light, tree = "nj", distance = provesti.dist, sample = 1000, showtree = F, cutoff = 50, quiet = F)
+
+tree_prac_genli <- aboot(m_amer_full_genlight, tree = "nj", distance = provesti.dist, sample = 10, showtree = F, cutoff = 50, quiet = F)
+tree_prac_genli$edge
+which.edge(tree_full,"R15-094-01")
+
+
+
+saveRDS(tree_full, "m_americana_full_r_tree")
+tree_full <- readRDS("C:/Users/super/Documents/gbs_pop_work/m_americana_paper_snp/2_2_21_work/m_americana_full_r_tree")
+
+tree_full$node.label
+
+#Full dataset Phylo by wild Vs cultivated host
+
+cols <- brewer.pal(n = 3, name = "Dark2")
+pop(m_amer_full_genind) <- m_amer_full_meta$Host.Designation
+
+pop(m_amer_full_genind) <- lat_long_dist_meta_all$X
+
+
+tiff("wild_or_cultivated_all_phylo.tiff", units="in", width=4, height=11, res=600)
+plot.phylo(tree_full, type= "phylogram", cex = .35, font = 2, adj = 1, tip.color = cols[pop(m_amer_full_genind)])
+nodelabels(tree_full$node.label, adj = c(1.3, -0.5), frame = "n", cex = 0.3,font = 3, xpd = TRUE)
+legend('bottomleft', legend = c("Cultivated", "Wild"), fill = cols, border = FALSE, bty = "n", cex = .85)
+axis(side = 1)
+title(xlab = "Genetic distance (Provesti's Distance)")
+dev.off()
+
+pdf("wild_or_cultivated_all_phylo.pdf", width=4, height=11)
+plot.phylo(tree_full, type= "phylogram", cex = .35, font = 2, adj = 1, tip.color = cols[pop(m_amer_full_genind)])
+nodelabels(tree_full$node.label, adj = c(1.3, -0.5), frame = "n", cex = 0.3,font = 3, xpd = TRUE)
+legend('bottomleft', legend = c("Cultivated", "Wild"), fill = cols, border = FALSE, bty = "n", cex = .85)
+axis(side = 1)
+title(xlab = "Genetic distance (Provesti's Distance)")
+dev.off()
+
+
+tiff("wild_or_cultivated_all_fan.tiff", units="in", width=6, height=6, res=600)
+plot.phylo(tree, type= "fan", cex = .35, font = 2, adj = 1, tip.color = cols[pop(m_amer_full_genind)])
+nodelabels(tree$node.label, adj = c(1.3, -0.5), frame = "n", cex = 0.3,font = 3, xpd = TRUE)
+legend('bottomleft', legend = c("Cultivated", "Wild"), fill = cols, border = FALSE, bty = "n", cex = 1)
+dev.off()
+
+pdf("wild_or_cultivated_all_fan.pdf", width=6, height=6)
+plot.phylo(tree_full, type= "fan", cex = .35, font = 2, adj = 1, tip.color = cols[pop(m_amer_full_genind)])
+nodelabels(tree_full$node.label, adj = c(1.3, -0.5), frame = "n", cex = 0.3,font = 3, xpd = TRUE)
+legend('bottomleft', legend = c("Cultivated", "Wild"), fill = cols, border = FALSE, bty = "n", cex = 1)
+dev.off()
+
+```
+
+```{r}
+# filtered, not clone corrected data for all years of data
+
+m_amer_full_no_tech_vcf <- read.vcfR( "~/gbs_pop_work/m_americana_paper_snp/2_2_21_work/m_americana_all_no_tech_no_years.vcf", verbose = FALSE )
+m_amer_full_no_tech_genind <- vcfR2genind(m_amer_full_no_tech_vcf)
+m_amer_full_no_tech_genlight <- vcfR2genlight(m_amer_full_no_tech_vcf)
+m_amer_full_no_tech_meta <- read.delim("~/gbs_pop_work/m_americana_paper_snp/2_2_21_work/m_amer_all_meta_no_tech_no_year.txt")
+
+
+indNames(m_amer_full_no_tech_genind) <-m_amer_full_no_tech_meta$Name
+
+
+#tree for full americana data
+getwd()
+setwd("C:/Users/super/Documents/gbs_pop_work/m_americana_paper_snp/2_2_21_work")
+tree_full_no_tech <- aboot(m_amer_full_no_tech_genind, tree = "nj", distance = provesti.dist, sample = 1000, showtree = F, cutoff = 50, quiet = F)
+
+
+saveRDS(tree_full_no_tech, "m_americana_full_no_tech_r_tree")
+tree_full_no_tech <- readRDS("C:/Users/super/Documents/gbs_pop_work/m_americana_paper_snp/2_2_21_work/m_americana_full_no_tech_r_tree")
+
+tree_full_no_tech$tip.label
+
+#Full dataset Phylo by wild Vs cultivated host
+
+cols <- brewer.pal(n = 3, name = "Dark2")
+pop(m_amer_full_genind) <- m_amer_full_meta$Host.Designation
+
+pop(m_amer_full_no_tech_genind) <- m_amer_full_no_tech_meta$Host_Designation
+
+
+
+
+tiff("wild_or_cultivated_all_no_tech_fan.tiff", units="in", width=6, height=6, res=600)
+plot.phylo(tree_full_no_tech , type= "fan", cex = .35, font = 2, adj = 1, tip.color = cols[pop(m_amer_full_no_tech_genind)])
+nodelabels(tree_full_no_tech$node.label, adj = c(1.3, -0.5), frame = "n", cex = 0.3,font = 3, xpd = TRUE)
+legend('bottomleft', legend = c("Cultivated", "Wild"), fill = cols, border = FALSE, bty = "n", cex = .85)
+axis(side = 1)
+title(xlab = "Genetic distance (Provesti's Distance)")
+dev.off()
+
+
+pdf("wild_or_cultivated_all_no_tech_fan.pdf", width=6, height=6)
+plot.phylo(tree_full_no_tech , type= "fan", cex = .35, font = 2, adj = 1, tip.color = cols[pop(m_amer_full_no_tech_genind)])
+nodelabels(tree_full_no_tech$node.label, adj = c(1.3, -0.5), frame = "n", cex = 0.3,font = 3, xpd = TRUE)
+legend('bottomleft', legend = c("Cultivated", "Wild"), fill = cols, border = FALSE, bty = "n", cex = .85)
+axis(side = 1)
+title(xlab = "Genetic distance (Provesti's Distance)")
+dev.off()
+
+
+```
+
+
+```{r}
+# Full dataset Phylo by Year of collection
+
+pop(m_amer_full_no_tech_genind) <- m_amer_full_no_tech_meta$Year_Collected
+
+
+tiff("year_coll_all_no_tech_fan.tiff", units="in", width=6, height=7, res=600)
+plot.phylo(tree_full_no_tech, type= "fan", cex = .35, font = 2, adj = 1, tip.color = cols[pop(m_amer_full_no_tech_genind)], rotate.tree = -40)
+nodelabels(tree_full_no_tech$node.label, adj = c(1.3, -0.5), frame = "n", cex = 0.3,font = 3, xpd = TRUE)
+legend('bottomleft', legend = c("2015", "2017"), fill = cols, border = FALSE, bty = "n", cex = .85, horiz=T)
+axis(side = 1)
+title(xlab = "Genetic distance (Provesti's Distance)")
+dev.off()
+
+pdf("year_coll_all_no_tech_fan.pdf", width=6, height=7)
+plot.phylo(tree_full_no_tech, type= "fan", cex = .35, font = 2, adj = 1, tip.color = cols[pop(m_amer_full_no_tech_genind)])
+nodelabels(tree_full_no_tech$node.label, adj = c(1.3, -0.5), frame = "n", cex = 0.3,font = 3, xpd = TRUE)
+legend('bottomleft', legend = c("2015", "2017"), fill = cols, border = FALSE, bty = "n", cex = .85, horiz=T)
+axis(side = 1)
+title(xlab = "Genetic distance (Provesti's Distance)")
+dev.off()
+
+
+tiff("year_coll_all_fan.tiff", units="in", width=6, height=6, res=600)
+plot.phylo(tree_full, type= "fan", cex = .35, font = 2, adj = 1, tip.color = cols[pop(m_amer_full_genind)])
+nodelabels(tree_full$node.label, adj = c(1.3, -0.5), frame = "n", cex = 0.3,font = 3, xpd = TRUE)
+legend('bottomleft', legend = c("2015", "2016", "2017"), fill = cols, border = FALSE, bty = "n", cex = 1, horiz=F)
+dev.off()
+
+pdf("year_coll_all_fan.pdf", width=6, height=6)
+plot.phylo(tree_full, type= "fan", cex = .35, font = 2, adj = 1, tip.color = cols[pop(m_amer_full_genind)])
+nodelabels(tree_full$node.label, adj = c(1.3, -0.5), frame = "n", cex = 0.3,font = 3, xpd = TRUE)
+legend('bottomleft', legend = c("2015", "2016", "2017"), fill = cols, border = FALSE, bty = "n", cex = 1, horiz=F)
+dev.off()
+```
+
+```{r}
+# Full dataset Phylo by location defined by geographic distance of 50 Miles
+
+lat_long_dist_meta_all_with_group <- read.delim("~/gbs_pop_work/m_americana_paper_snp/geographic_dist_work/lat_long_dist_meta_all_with_group.txt")
+pop(m_amer_full_no_tech_genind) <- m_amer_full_no_tech_meta$Group.based.on.50.Miles.clustering.
+cols <- c('cyan3', 'blue', 'red', 'aquamarine4', 'deeppink1', 'coral','darkviolet','gray0','springgreen3','midnightblue')
+mycolors <- c('cyan3', 'blue', 'red', 'aquamarine4', 'deeppink1', 'coral','darkviolet','gray0','springgreen3','midnightblue')
+
+myColors<- c('node' = 'black',
+             'R15-0100-1' = 'cyan3',
+             'R15-0100-3' = 'cyan3',
+             'R15-016-03' = 'blue', 
+             'R15-018-01' = 'blue', 
+             'R15-018-02' = 'blue',
+             'R15-019-02' = 'blue', 
+             'R15-020-02' = 'blue',
+             'R15-020-03' = 'blue', 
+             'R15-022-02' = 'red', 
+             'R15-023-01' = 'red', 
+             'R15-024-01' = 'red', 
+             'R15-024-02' = 'red', 
+             'R15-025-02' = 'red', 
+             'R15-026-01' = 'red', 
+             'R15-026-03' = 'red', 
+             'R15-028-02' = 'red', 
+             'R15-030-01' = 'red', 
+             'R15-031-02' = 'red', 
+             'R15-031-03' = 'red', 
+             'R15-033-01' = 'red',
+             'R15-033-03' = 'red', 
+             'R15-034-01' = 'red', 
+             'R15-034-03' = 'red', 
+             'R15-035-01' = 'red', 
+             'R15-035-02' = 'red', 
+             'R15-035-03' = 'red', 
+             'R15-036-03' = 'red', 
+             'R15-037-01' = 'red', 
+             'R15-037-02' = 'red', 
+             'R15-037-03' = 'red', 
+             'R15-038-01' = 'red', 
+             'R15-038-03' = 'red', 
+             'R15-039-01' = 'red', 
+             'R15-039-02' = 'red', 
+             'R15-040-02' = 'aquamarine4', 
+             'R15-042-01' = 'aquamarine4',
+             'R15-042-03' = 'aquamarine4',
+             'R15-043-01' = 'aquamarine4',
+             'R15-043-02' = 'aquamarine4',
+             'R15-043-03' = 'aquamarine4',
+             'R15-045-02' = 'aquamarine4',
+             'R15-045-03' = 'aquamarine4', 
+             'R15-046-01' = 'aquamarine4', 
+             'R15-046-02' = 'aquamarine4',
+             'R15-049-01' = 'deeppink1', 
+             'R15-050-01' = 'deeppink1', 
+             'R15-051-01' = 'deeppink1',
+             'R15-051-03' = 'deeppink1',
+             'R15-052-01' = 'deeppink1',
+             'R15-054-02' = 'coral', 
+             'R15-054-03' = 'coral', 
+             'R15-055-01' = 'coral', 
+             'R15-055-02' = 'coral',
+             'R15-056-01' = 'coral',
+             'R15-056-03' = 'coral', 
+             'R15-057-02' = 'coral', 
+             'R15-058-02' = 'coral', 
+             'R15-059-02' = 'coral', 
+             'R15-059-03' = 'coral',
+             'R15-062-01' = 'coral',
+             'R15-063-02' = 'coral', 
+             'R15-063-03' = 'coral',
+             'R15-064-01' = 'coral',
+             'R15-064-03' = 'coral',
+             'R15-067-01' = 'darkviolet',
+             'R15-067-02' = 'darkviolet',
+             'R15-068-02' = 'darkviolet',
+             'R15-069-03' = 'darkviolet',
+             'R15-070-01' = 'aquamarine4',
+             'R15-070-02' = 'aquamarine4', 
+             'R15-070-03' = 'aquamarine4', 
+             'R15-072-01' = 'gray0', 
+             'R15-072-02' = 'gray0', 
+             'R15-073-02' = 'gray0', 
+             'R15-075-02' = 'gray0', 
+             'R15-076-02' = 'gray0', 
+             'R15-077-01' = 'gray0', 
+             'R15-077-03' = 'gray0',
+             'R15-078-01' = 'springgreen3',
+             'R15-079-01' = 'springgreen3',
+             'R15-079-03' = 'springgreen3',
+             'R15-080-01' = 'springgreen3',
+             'R15-080-02' = 'springgreen3',
+             'R15-085-03' = 'midnightblue', 
+             'R15-088-01' = 'midnightblue',
+             'R15-091-01' = 'cyan3',
+             'R15-091-02' = 'cyan3', 
+             'R15-091-03' = 'cyan3', 
+             'R15-092-01' = 'cyan3', 
+             'R15-092-02' = 'cyan3', 
+             'R15-092-03' = 'cyan3', 
+             'R15-093-01' = 'cyan3', 
+             'R15-094-01' = 'cyan3',
+             'R15-094-02' = 'cyan3', 
+             'R15-095-01' = 'cyan3', 
+             'R15-096-03' = 'cyan3',
+             'R15-097-01' = 'cyan3',
+             'R15-097-02' = 'cyan3', 
+             'R15-097-03' = 'cyan3',
+             'R15-099-01' = 'cyan3',
+             'R15-099-02' = 'cyan3', 
+             'R15-099-03' = 'cyan3', 
+             'R17-009-01' = 'gray0', 
+             'R17-010-01' = 'gray0',
+             'R17-010-02' = 'gray0',
+             'R17-010-03' = 'gray0',
+             'R17-011-02' = 'gray0', 
+             'R17-011-03' = 'gray0',
+             'R17-013-03' = 'gray0', 
+             'R17-014-01' = 'gray0', 
+             'R17-015-03' = 'gray0',
+             'R17-016-01' = 'gray0', 
+             'R17-016-03' = 'gray0',
+             'R17-017-01' = 'gray0',
+             'R17-017-02' = 'gray0',
+             'R17-017-03' = 'gray0', 
+             'R17-018-02' = 'gray0', 
+             'R17-018-03' = 'gray0', 
+             'R17-019-01' = 'gray0', 
+             'R17-019-02' = 'gray0', 
+             'R17-019-03' = 'gray0', 
+             'R17-020-01' = 'gray0', 
+             'R17-020-02' = 'gray0',
+             'R17-020-03' = 'gray0', 
+             'R17-021-02' = 'gray0', 
+             'R17-021-03' = 'gray0', 
+             'R17-022-01' = 'gray0', 
+             'R17-022-02' = 'gray0', 
+             'R17-022-03' = 'gray0', 
+             'R17-023-01' = 'gray0', 
+             'R17-023-03' = 'gray0', 
+             'R17-024-02' = 'gray0', 
+             'R17-024-03' = 'gray0', 
+             'R17-025-02' = 'gray0',
+             'R17-026-02' = 'gray0', 
+             'R17-026-03' = 'gray0', 
+             'R17-027-01' = 'gray0', 
+             'R17-027-02' = 'gray0', 
+             'R17-028-02' = 'gray0',
+             'R17-029-01' = 'cyan3',
+             'R17-030-01' = 'cyan3', 
+             'R17-030-02' = 'cyan3',
+             'R17-031-01' = 'cyan3',
+             'R17-031-02' = 'cyan3', 
+             'R17-032-01' = 'cyan3', 
+             'R17-032-02' = 'cyan3',
+             'R17-032-03' = 'cyan3',
+             'R17-033-02' = 'cyan3', 
+             'R17-033-03' = 'cyan3', 
+             'R17-034-02' = 'cyan3', 
+             'R17-034-03' = 'cyan3', 
+             'R17-035-01' = 'cyan3', 
+             'R17-035-02' = 'cyan3', 
+             'R17-036-03' = 'cyan3', 
+             'R17-037-01' = 'cyan3', 
+             'R17-037-02' = 'cyan3',
+             'R17-038-01' = 'cyan3',
+             'R17-038-02' = 'cyan3',
+             'R17-038-03' = 'cyan3',
+             'R17-039-01' = 'springgreen3',
+             'R17-039-02' = 'springgreen3',
+             'R17-039-03' = 'springgreen3',
+             'R17-040-02' = 'springgreen3', 
+             'R17-040-03' = 'springgreen3', 
+             'R17-041-01' = 'springgreen3', 
+             'R17-041-02' = 'springgreen3', 
+             'R17-042-02' = 'springgreen3', 
+             'R17-043-01' = 'springgreen3', 
+             'R17-043-02' = 'springgreen3',
+             'R17-043-03' = 'springgreen3',
+             'R17-044-01' = 'springgreen3',
+             'R17-044-02' = 'springgreen3',
+             'R17-044-03' = 'springgreen3', 
+             'R17-045-02' = 'springgreen3', 
+             'R17-045-03' = 'springgreen3', 
+             'R17-046-01' = 'springgreen3', 
+             'R17-046-02' = 'springgreen3', 
+             'R17-046-03' = 'springgreen3', 
+             'R17-047-01' = 'springgreen3', 
+             'R17-047-02' = 'springgreen3', 
+             'R17-047-03' = 'springgreen3', 
+             'R17-048-01' = 'springgreen3', 
+             'R17-048-02' = 'springgreen3', 
+             'R17-048-03' = 'springgreen3')
+
+
+myLabels <- c(tree_full_no_tech$tip.label, tree_full_no_tech$node.label)
+selColors <- myColors[match(myLabels[tree_full_no_tech$edge[,2]], names(myColors), nomatch=1)]
+
+
+
+
+tiff("location_all_phylo_simple.tiff", units="in", width=4, height=11, res=600)
+plot.phylo(tree_full_no_tech, type= "phylogram", cex = .4, font = 2, adj = 1, tip.color = mycolors[pop(m_amer_full_no_tech_genind)], edge.color = selColors)
+nodelabels(tree_full_no_tech$node.label, frame = "n", cex = 0.3,font = 3, xpd = TRUE)
+legend('bottomright', legend = c("1", "2", "3", "4", "5", "6", "7", "8", "9", "10"), fill =  mycolors, border = FALSE, bty = "n", cex = .45, horiz=T)
+axis(side = 1)
+title(xlab = "Genetic distance (Provesti's Distance)")
+dev.off()
+
+
+
+tiff("location_all_phylo_simple.tiff", units="in", width=4, height=11, res=600)
+plot.phylo(tree_full_no_tech, type= "phylogram", cex = .35, font = 2, adj = 1, tip.color =  mycolors[pop(m_amer_full_no_tech_genind)], edge.color = selColors)
+nodelabels(tree_full_no_tech$node.label, frame = "n", cex = 0.3,font = 3, xpd = TRUE)
+axis(side = 1)
+title(xlab = "Genetic distance (Provesti's Distance)")
+dev.off()
+
+pop(m_amer_full_no_tech_genind) <- m_amer_full_no_tech_meta$Host_Designation
+cols <- brewer.pal(n = 3, name = "Dark2")
+
+tiff("host_type_all_phylo_simple.tiff", units="in", width=6, height=7, res=600)
+plot.phylo(tree_full_no_tech, type= "fan", cex = .4, font = 2, adj = 1, tip.color =  cols[pop(m_amer_full_no_tech_genind)])
+nodelabels(tree_full_no_tech$node.label, frame = "n", cex = 0.3,font = 3, xpd = TRUE)
+legend('bottomleft', legend = c("Cultivated", "Wild"), fill =  cols, border = FALSE, bty = "n", cex = .95, horiz=F)
+axis(side = 1)
+title(xlab = "Genetic distance (Provesti's Distance)")
+dev.off()
+
+tree_full$edge
+
+nb.cols <- 10
+mycolors <- colorRampPalette(brewer.pal(8, "Dark2"))(nb.cols)
+mycolors <- c('cyan3', 'blue', 'red', 'aquamarine4', 'deeppink1', 'coral','darkviolet','gray0','springgreen3','midnightblue')
+
+tiff("location_all_phylo.tiff", units="in", width=4, height=11, res=600)
+plot.phylo(tree_full, type= "phylogram", cex = .35, font = 2, adj = 1, tip.color =  mycolors[pop(m_amer_full_genind)])
+nodelabels(tree_full$node.label, adj = c(1.3, -0.5), frame = "n", cex = 0.3,font = 3, xpd = TRUE)
+legend('bottomright', legend = c("1", "2", "3", "4", "5", "6", "7", "8", "9", "10"), fill =  mycolors, border = FALSE, bty = "n", cex = .85, horiz=F)
+axis(side = 1)
+title(xlab = "Genetic distance (Provesti's Distance)")
+dev.off()
+
+
+
+
+print(myColors)
+
+tree_full$tip.label
+
+labels <- as.vector(tree_full$tip.label)
+
+
+
+myLabels <- c(tree$tip.label, tree$node.label)
+
+## match colors and labels (nomatch == node => select idx 1)
+## (myLabels are reordered by edge ordering
+selColors <- myColors[match(myLabels[tree_full$edge[,2]], names(myColors), nomatch=1)]
+tree_full$edge
+tree_full$tip.label <- lat_long_dist_meta_all_with_group$year_name
+
+tiff("location_all_phylo_simple.tiff", units="in", width=6, height=7, res=600)
+plot.phylo(tree_full, type= "fan", cex = .525, font = 2, adj = 1, tip.color =  mycolors[pop(m_amer_full_genind)], edge.color = selColors)
+nodelabels(tree_full$node.label, frame = "n", cex = 0.3,font = 3, xpd = TRUE)
+legend('bottomright', legend = c("1", "2", "3", "4", "5", "6", "7", "8", "9", "10"), fill =  mycolors, border = FALSE, bty = "n", cex = .75, horiz=F)
+axis(side = 1)
+title(xlab = "Genetic distance (Provesti's Distance)")
+dev.off()
+
+pdf("location_all_phylo.pdf", width=4, height=11)
+plot.phylo(tree_full, type= "phylogram", cex = .35, font = 2, adj = 1, tip.color = cols[pop(m_amer_full_genind)])
+nodelabels(tree_full$node.label, adj = c(1.3, -0.5), frame = "n", cex = 0.3,font = 3, xpd = TRUE)
+legend('bottomright', legend = c("1", "2", "3", "4", "5", "6", "7", "8", "9", "10"), fill = cols, border = FALSE, bty = "n", cex = .85, horiz=F)
+axis(side = 1)
+title(xlab = "Genetic distance (Provesti's Distance)")
+dev.off()
+
+
+tiff("location_all_fan.tiff", units="in", width=6, height=6, res=600)
+plot.phylo(tree_full, type= "fan", cex = .35, font = 2, adj = 1, tip.color = cols[pop(m_amer_full_genind)])
+nodelabels(tree_full$node.label, adj = c(1.3, -0.5), frame = "n", cex = 0.3,font = 3, xpd = TRUE)
+legend('bottomleft', legend = c("1", "2", "3", "4", "5", "6", "7", "8", "9", "10"),fill = cols, border = FALSE, bty = "n", cex = .65, horiz=F)
+dev.off()
+
+pdf("location_all_fan.pdf", width=6, height=6)
+plot.phylo(tree_full, type= "fan", cex = .35, font = 2, adj = 1, tip.color = cols[pop(m_amer_full_genind)])
+nodelabels(tree_full$node.label, adj = c(1.3, -0.5), frame = "n", cex = 0.3,font = 3, xpd = TRUE)
+legend('bottomleft', legend = c("1", "2", "3", "4", "5", "6", "7", "8", "9", "10"), fill = cols, border = FALSE, bty = "n", cex = .65, horiz=F)
+dev.off()
+
+```
+
+
+
+```{r}
+#Full data clone corrected data graphs
+
+m_amer_cc_vcf <- read.vcfR( "~/gbs_pop_work/m_americana_paper_snp/2_2_21_work/m_americana_clone_work/m_americana_clone_correct_full_filt.vcf", verbose = FALSE )
+m_amer_cc_genind <- vcfR2genind(m_amer_cc_vcf)
+m_amer_cc_genlight <- vcfR2genlight(m_amer_cc_vcf)
+m_amer_cc_meta <- read.delim("~/gbs_pop_work/m_americana_paper_snp/2_2_21_work/m_americana_clone_work/m_americana_metadata_cc.txt")
+
+
+#Clone Corr tree for cc data
+
+tree_cc <- aboot(m_amer_cc_genind, tree = "nj", distance = provesti.dist, sample = 1000, showtree = F, cutoff = 50, quiet = F)
+
+saveRDS(tree_cc, "m_americana_cc_r_tree")
+tree_cc <- readRDS("C:/Users/super/Documents/gbs_pop_work/m_americana_paper_snp/2_2_21_work/m_americana_clone_work/m_americana_cc_r_tree")
+
+getwd()
+setwd("C:/Users/super/Documents/gbs_pop_work/m_americana_paper_snp/2_2_21_work/m_americana_clone_work")
+
+
+#Clone Corr Phylo by host wild or cultivated
+cols <- brewer.pal(n = 3, name = "Dark2")
+pop(m_amer_cc_genind) <- m_amer_cc_meta$Host_Designation
+m_amer_cc_genind$pop
+
+tiff("wild_or_cultivated_cc_phylo.tiff", units="in", width=4, height=11, res=600)
+plot.phylo(tree_cc, type= "phylogram", cex = .35, font = 2, adj = 1, tip.color = cols[pop(m_amer_cc_genind)])
+nodelabels(tree_cc$node.label, adj = c(1.3, -0.5), frame = "n", cex = 0.3,font = 3, xpd = TRUE)
+legend('bottomleft', legend = c("Cultivated", "Wild"), fill = cols, border = FALSE, bty = "n", cex = .75)
+axis(side = 1)
+title(xlab = "Genetic distance (Provesti's Distance)")
+dev.off()
+
+pdf("wild_or_cultivated_cc_phylo.pdf", width=4, height=11)
+plot.phylo(tree_cc, type= "phylogram", cex = .35, font = 2, adj = 1, tip.color = cols[pop(m_amer_cc_genind)])
+nodelabels(tree_cc$node.label, adj = c(1.3, -0.5), frame = "n", cex = 0.3,font = 3, xpd = TRUE)
+legend('bottomleft', legend = c("Cultivated", "Wild"), fill = cols, border = FALSE, bty = "n", cex = .75)
+axis(side = 1)
+title(xlab = "Genetic distance (Provesti's Distance)")
+dev.off()
+
+tiff("wild_or_cultivated_cc_fan.tiff", units="in", width=6, height=6, res=600)
+plot.phylo(tree_cc, type= "fan", cex = .35, font = 2, adj = 1, tip.color = cols[pop(m_amer_cc_genind)])
+nodelabels(tree_cc$node.label, adj = c(1.3, -0.5), frame = "n", cex = 0.3,font = 3, xpd = TRUE)
+legend('bottomleft', legend = c("Cultivated", "Wild"), fill = cols, border = FALSE, bty = "n", cex = 1)
+dev.off()
+
+pdf("wild_or_cultivated_cc_fan.pdf", width=6, height=6)
+plot.phylo(tree_cc, type= "fan", cex = .35, font = 2, adj = 1, tip.color = cols[pop(m_amer_cc_genind)])
+nodelabels(tree_cc$node.label, adj = c(1.3, -0.5), frame = "n", cex = 0.3,font = 3, xpd = TRUE)
+legend('bottomleft', legend = c("Cultivated", "Wild"), fill = cols, border = FALSE, bty = "n", cex = 1)
+dev.off()
+
+
+
+```
+
+```{r}
+#Clone corr Phylo by year of collection 
+cols <- brewer.pal(n = 3, name = "Dark2")
+pop(m_amer_cc_genind) <- m_amer_cc_meta$Year_Collected
+m_amer_cc_genind$pop
+
+tiff("year_coll_cc_phylo.tiff", units="in", width=4, height=11, res=600)
+plot.phylo(tree_cc, type= "phylogram", cex = .4, font = 2, adj = 1, tip.color = cols[pop(m_amer_cc_genind)], align.tip.label = FALSE)
+nodelabels(tree_cc$node.label, adj = c(1.3, -0.5), frame = "n", cex = 0.3,font = 3, xpd = TRUE)
+legend('bottomleft', legend = c("2015", "2016", "2017"), fill = cols, border = FALSE, bty = "n", cex = .9, horiz=T)
+axis(side = 1)
+title(xlab = "Genetic distance (Provesti's Distance)")
+dev.off()
+
+pdf("year_coll_cc_phylo.pdf", width=4, height=11)
+plot.phylo(tree_cc, type= "phylogram", cex = .4, font = 2, adj = 1, tip.color = cols[pop(m_amer_cc_genind)], align.tip.label = FALSE)
+nodelabels(tree_cc$node.label, adj = c(1.3, -0.5), frame = "n", cex = 0.3,font = 3, xpd = TRUE)
+legend('bottomleft', legend = c("2015", "2016", "2017"), fill = cols, border = FALSE, bty = "n", cex = .9, horiz=T)
+axis(side = 1)
+title(xlab = "Genetic distance (Provesti's Distance)")
+dev.off()
+
+tiff("year_coll_cc_fan.tiff", units="in", width=6, height=6, res=600)
+plot.phylo(tree_cc, type= "fan", cex = .35, font = 2, adj = 1, tip.color = cols[pop(m_amer_cc_genind)])
+nodelabels(tree_cc$node.label, adj = c(1.3, -0.5), frame = "n", cex = 0.3,font = 3, xpd = TRUE)
+legend('bottomleft', legend = c("2015", "2016", "2017"), fill = cols, border = FALSE, bty = "n", cex = 1)
+dev.off()
+
+pdf("year_coll_cc_fan.pdf", width=6, height=6)
+plot.phylo(tree_cc, type= "fan", cex = .35, font = 2, adj = 1, tip.color = cols[pop(m_amer_cc_genind)])
+nodelabels(tree_cc$node.label, adj = c(1.3, -0.5), frame = "n", cex = 0.3,font = 3, xpd = TRUE)
+legend('bottomleft', legend = c("2015", "2016", "2017"), fill = cols, border = FALSE, bty = "n", cex = 1)
+dev.off()
+
+
+tree$
+```
+
+
+```{r}
+# cc dataset Phylo by locatioin defined by geographic distance of 50 Miles
+pop(m_amer_cc_genind) <- lat_long_dist_meta_cc$clust
+cols <- brewer.pal(n = 10, name = "Paired")
+
+tiff("location_cc_phylo.tiff", units="in", width=4, height=11, res=600)
+plot.phylo(tree_cc, type= "phylogram", cex = .35, font = 2, adj = 1, tip.color = c('cyan3', 'blue', 'red', 'aquamarine4', 'deeppink1', 'coral','darkviolet','gray0','springgreen3','midnightblue'))
+nodelabels(tree_cc$node.label, adj = c(1.3, -0.5), frame = "n", cex = 0.3,font = 3, xpd = TRUE)
+legend('bottomright', legend = c("1", "2", "3", "4", "5", "6", "7", "8", "9", "10"), fill = c('cyan3', 'blue', 'red', 'aquamarine4', 'deeppink1', 'coral','darkviolet','gray0','springgreen3','midnightblue'), border = FALSE, bty = "n", cex = .75, horiz=F)
+axis(side = 1)
+title(xlab = "Genetic distance (Provesti's Distance)")
+dev.off()
+
+pdf("location_cc_phylo.pdf", width=4, height=11)
+plot.phylo(tree_cc, type= "phylogram", cex = .35, font = 2, adj = 1, tip.color = c('cyan3', 'blue', 'red', 'aquamarine4', 'deeppink1', 'coral','darkviolet','gray0','springgreen3','midnightblue'))
+nodelabels(tree_cc$node.label, adj = c(1.3, -0.5), frame = "n", cex = 0.3,font = 3, xpd = TRUE)
+legend('bottomright', legend = c("1", "2", "3", "4", "5", "6", "7", "8", "9", "10"), fill = c('cyan3', 'blue', 'red', 'aquamarine4', 'deeppink1', 'coral','darkviolet','gray0','springgreen3','midnightblue'), border = FALSE, bty = "n", cex = .75, horiz=F)
+axis(side = 1)
+title(xlab = "Genetic distance (Provesti's Distance)")
+dev.off()
+
+
+tiff("location_cc_fan.tiff", units="in", width=6, height=6, res=600)
+plot.phylo(tree_cc, type= "fan", cex = .35, font = 2, adj = 1, tip.color = cols[pop(m_amer_cc_genind)])
+nodelabels(tree_cc$node.label, adj = c(1.3, -0.5), frame = "n", cex = 0.3,font = 3, xpd = TRUE)
+legend('bottomleft', legend = c("1", "2", "3", "4", "5", "6", "7", "8", "9", "10"),fill = cols, border = FALSE, bty = "n", cex = .65, horiz=F)
+dev.off()
+
+pdf("location_cc_fan.pdf", width=6, height=6)
+plot.phylo(tree_cc, type= "fan", cex = .35, font = 2, adj = 1, tip.color = cols[pop(m_amer_cc_genind)])
+nodelabels(tree_cc$node.label, adj = c(1.3, -0.5), frame = "n", cex = 0.3,font = 3, xpd = TRUE)
+legend('bottomleft', legend = c("1", "2", "3", "4", "5", "6", "7", "8", "9", "10"), fill = cols, border = FALSE, bty = "n", cex = .65, horiz=F)
+dev.off()
+
+```
+
+```{r}
+#pca for all m_americana
+#PCA for cc data
+
+
+ploidy(m_amer_cc_genlight) <- 2
+pop(m_amer_cc_genlight) <- lat_long_dist_meta_cc$id
+
+
+cc_rubi.pca <- glPca(m_amer_cc_genlight, nf = 3)
+barplot(100*cc_rubi.pca$eig/sum(cc_rubi.pca$eig), col = heat.colors(50), main="PCA Eigenvalues")
+title(ylab="Percent of variance\nexplained", line = 2)
+title(xlab="Eigenvalues", line = 1)
+
+
+cc_rubi.pca$eig[2]/ (sum(cc_rubi.pca$eig))
+rubi.pca.scores <- as.data.frame(cc_rubi.pca$scores)
+rubi.pca.scores$pop <- pop(m_amer_cc_genlight)
+
+num_indv_per_lineage_2015 <- read.delim("~/gbs_pop_work/m_americana_paper_snp/2_2_21_work/m_americana_2015_alone/num_indv_per_lineage_2015.txt")
+
+rubi.pca.scores <- cbind(rubi.pca.scores,m_amer_cc_meta$num_iso_per)
+
+colnames(rubi.pca.scores) <- c("PC1", "PC2", "PC3", "Population", "Size of Clonal Lineage")
+
+num_indv_per_lineage_2015$pch <- as.factor(num_indv_per_lineage_2015$pch)
+
+library(ggplot2)
+set.seed(9)
+
+rubi.pca.scores
+getwd()
+
+setwd("~/gbs_pop_work/m_americana_paper_snp/2_2_21_work")
+tiff("pca_all_cc_without_shapes.tiff", units="in", width=4, height=4, res=600)
+ggplot(rubi.pca.scores, aes(x=PC1, y=PC2, colour= pop)) +
+  geom_point(size= m_amer_cc_meta$num_iso_per) +
+  scale_color_manual(values = c('cyan3', 'blue', 'red', 'aquamarine4', 'deeppink1', 'coral','darkviolet','gray0','springgreen3','midnightblue')) +
+  geom_hline(yintercept = 0) +
+  geom_vline(xintercept = 0) +
+  theme_bw() + 
+  theme(legend.title = element_text(colour="black", size=10, face="bold")) +
+  theme(legend.title = element_blank()) +
+  theme(legend.position = "none") +
+  xlab("PC1 (3.3%)") + 
+  ylab("PC2 (2.2%)")
+  
+dev.off()
+
+```
+
+
+
+
+
+```{r}
+# 2015 rust isolates only!!!!!!
+
+m_amer_2015_vcf <- read.vcfR( "~/gbs_pop_work/m_americana_paper_snp/2_2_21_work/m_americana_2015_alone/m_americana_2015_no_technical_no_year.vcf", verbose = FALSE )
+m_amer_2015_genind <- vcfR2genind(m_amer_2015_vcf)
+m_amer_2015_genlight <- vcfR2genlight(m_amer_2015_vcf)
+m_amer_2015_meta <- read.delim("~/gbs_pop_work/m_americana_paper_snp/2_2_21_work/m_americana_2015_alone/m_amer_2015_no_tech_no_year_meta.txt")
+
+
+indNames(m_amer_2015_genind) <-m_amer_2015_meta$Name
+
+#Clone Corr tree for cc data
+getwd()
+setwd("C:/Users/super/Documents/gbs_pop_work/m_americana_paper_snp/2_2_21_work/m_americana_2015_alone")
+
+
+tree_2015 <- aboot(m_amer_2015_genind, tree = "nj", distance = provesti.dist, sample = 1000, showtree = F, cutoff = 50, quiet = F)
+
+saveRDS(tree_2015, "m_americana_2015_r_tree")
+tree_2015 <- readRDS("C:/Users/super/Documents/gbs_pop_work/m_americana_paper_snp/2_2_21_work/m_americana_2015_alone/m_americana_2015_r_tree")
+
+getwd()
+setwd("C:/Users/super/Documents/gbs_pop_work/m_americana_paper_snp/2_2_21_work/m_americana_clone_work")
+
+
+#Clone Corr Phylo by host wild or cultivated
+cols <- brewer.pal(n = 3, name = "Dark2")
+pop(m_amer_2015_genind) <- m_amer_2015_meta$Host.Designation
+m_amer_2015_genind$pop
+
+tiff("wild_or_cultivated_2015_phylo.tiff", units="in", width=4, height=11, res=600)
+plot.phylo(tree_2015, type= "phylogram", cex = .35, font = 2, adj = 1, tip.color = cols[pop(m_amer_2015_genind)])
+nodelabels(tree_2015$node.label, adj = c(1.3, -0.5), frame = "n", cex = 0.3,font = 3, xpd = TRUE)
+legend('bottomleft', legend = c("Cultivated", "Wild"), fill = cols, border = FALSE, bty = "n", cex = .75)
+axis(side = 1)
+title(xlab = "Genetic distance (Provesti's Distance)")
+dev.off()
+
+pdf("wild_or_cultivated_2015_phylo.pdf", width=4, height=11)
+plot.phylo(tree_2015, type= "phylogram", cex = .35, font = 2, adj = 1, tip.color = cols[pop(m_amer_2015_genind)])
+nodelabels(tree_2015$node.label, adj = c(1.3, -0.5), frame = "n", cex = 0.3,font = 3, xpd = TRUE)
+legend('bottomleft', legend = c("Cultivated", "Wild"), fill = cols, border = FALSE, bty = "n", cex = .75)
+axis(side = 1)
+title(xlab = "Genetic distance (Provesti's Distance)")
+dev.off()
+
+tiff("wild_or_cultivated_2015_fan.tiff", units="in", width=6, height=6, res=600)
+plot.phylo(tree_2015, type= "fan", cex = .35, font = 2, adj = 1, tip.color = cols[pop(m_amer_2015_genind)])
+nodelabels(tree_2015$node.label, adj = c(1.3, -0.5), frame = "n", cex = 0.3,font = 3, xpd = TRUE)
+legend('bottomleft', legend = c("Cultivated", "Wild"), fill = cols, border = FALSE, bty = "n", cex = 1)
+dev.off()
+
+pdf("wild_or_cultivated_2015_fan.pdf", width=6, height=6)
+plot.phylo(tree_2015, type= "fan", cex = .35, font = 2, adj = 1, tip.color = cols[pop(m_amer_2015_genind)])
+nodelabels(tree_2015$node.label, adj = c(1.3, -0.5), frame = "n", cex = 0.3,font = 3, xpd = TRUE)
+legend('bottomleft', legend = c("Cultivated", "Wild"), fill = cols, border = FALSE, bty = "n", cex = 1)
+dev.off()
+
+
+
+```
+
+```{r}
+m_amer_2015_no_tech_vcf <- read.vcfR( "~/gbs_pop_work/m_americana_paper_snp/2_2_21_work/m_americana_2015_alone/m_americana_2015_no_technical_no_year.vcf", verbose = FALSE )
+m_amer_2015_no_tech_genind <- vcfR2genind(m_amer_2015_no_tech_vcf)
+m_amer_2015_no_tech_genlight <- vcfR2genlight(m_amer_2015_no_tech_vcf)
+m_amer_2015_no_tech_meta <- read.delim("~/gbs_pop_work/m_americana_paper_snp/2_2_21_work/m_americana_2015_alone/m_amer_2015_no_tech_no_year_meta.txt")
+
+indNames(m_amer_2015_no_tech_genind) <- m_amer_2015_no_tech_meta$Name
+m_amer_2015_no_tech_genind
+#Clone Corr tree for cc data
+getwd()
+setwd("C:/Users/super/Documents/gbs_pop_work/m_americana_paper_snp/2_2_21_work/m_americana_2015_alone")
+
+
+tree_2015 <- aboot(m_amer_2015_no_tech_genind, tree = "nj", distance = provesti.dist, sample = 1000, showtree = F, cutoff = 50, quiet = F)
+
+saveRDS(tree_2015, "m_americana_2015_no_tech_r_tree")
+tree_2015 <- readRDS("C:/Users/super/Documents/gbs_pop_work/m_americana_paper_snp/2_2_21_work/m_americana_2015_alone/m_americana_2015_no_tech_r_tree")
+
+getwd()
+setwd("C:/Users/super/Documents/gbs_pop_work/m_americana_paper_snp/2_2_21_work/m_americana_2015_alone/")
+
+
+#Clone Corr Phylo by host wild or cultivated
+cols <- brewer.pal(n = 3, name = "Dark2")
+pop(m_amer_2015_no_tech_genind) <- m_amer_2015_meta$Host_Designation
+m_amer_2015_genind$pop
+
+tiff("wild_or_cultivated_2015_phylo.tiff", units="in", width=4, height=11, res=600)
+plot.phylo(tree_2015, type= "phylogram", cex = .35, font = 2, adj = 1, tip.color = cols[pop(m_amer_2015_genind)])
+nodelabels(tree_2015$node.label, adj = c(1.3, -0.5), frame = "n", cex = 0.3,font = 3, xpd = TRUE)
+legend('bottomleft', legend = c("Cultivated", "Wild"), fill = cols, border = FALSE, bty = "n", cex = .75)
+axis(side = 1)
+title(xlab = "Genetic distance (Provesti's Distance)")
+dev.off()
+
+pdf("wild_or_cultivated_2015_phylo.pdf", width=4, height=11)
+plot.phylo(tree_2015, type= "phylogram", cex = .35, font = 2, adj = 1, tip.color = cols[pop(m_amer_2015_genind)])
+nodelabels(tree_2015$node.label, adj = c(1.3, -0.5), frame = "n", cex = 0.3,font = 3, xpd = TRUE)
+legend('bottomleft', legend = c("Cultivated", "Wild"), fill = cols, border = FALSE, bty = "n", cex = .75)
+axis(side = 1)
+title(xlab = "Genetic distance (Provesti's Distance)")
+dev.off()
+
+tiff("wild_or_cultivated_2015_fan.tiff", units="in", width=6, height=6, res=600)
+plot.phylo(tree_2015, type= "fan", cex = .35, font = 2, adj = 1, tip.color = cols[pop(m_amer_2015_genind)])
+nodelabels(tree_2015$node.label, adj = c(1.3, -0.5), frame = "n", cex = 0.3,font = 3, xpd = TRUE)
+legend('bottomleft', legend = c("Cultivated", "Wild"), fill = cols, border = FALSE, bty = "n", cex = 1)
+dev.off()
+
+pdf("wild_or_cultivated_2015_fan.pdf", width=6, height=6)
+plot.phylo(tree_2015, type= "fan", cex = .35, font = 2, adj = 1, tip.color = cols[pop(m_amer_2015_genind)])
+nodelabels(tree_2015$node.label, adj = c(1.3, -0.5), frame = "n", cex = 0.3,font = 3, xpd = TRUE)
+legend('bottomleft', legend = c("Cultivated", "Wild"), fill = cols, border = FALSE, bty = "n", cex = 1)
+dev.off()
+
+
+
+```
+
+```{r}
+
+# 2015 Phylo by location defined by geographic distance of 50 Miles
+setwd("C:/Users/super/Documents/gbs_pop_work/m_americana_paper_snp/2_2_21_work/m_americana_2015_alone")
+getwd()
+pop(m_amer_2015_no_tech_genind) <- m_amer_2015_no_tech_meta$Group.based.on.50.Miles.clustering.
+
+
+cols1 <- c('cyan3', 'blue', 'red', 'aquamarine4', 'deeppink1', 'coral','darkviolet','gray0','springgreen3','midnightblue')
+myColors<- c('node' = 'black',
+             'R15-0100-1' = 'cyan3',
+             'R15-0100-3' = 'cyan3',
+             'R15-016-03' = 'blue', 
+             'R15-018-01' = 'blue', 
+             'R15-018-02' = 'blue',
+             'R15-019-02' = 'blue', 
+             'R15-020-02' = 'blue',
+             'R15-020-03' = 'blue', 
+             'R15-022-02' = 'red', 
+             'R15-023-01' = 'red', 
+             'R15-024-01' = 'red', 
+             'R15-024-02' = 'red', 
+             'R15-025-02' = 'red', 
+             'R15-026-01' = 'red', 
+             'R15-026-03' = 'red', 
+             'R15-028-02' = 'red', 
+             'R15-030-01' = 'red', 
+             'R15-031-02' = 'red', 
+             'R15-031-03' = 'red', 
+             'R15-033-01' = 'red',
+             'R15-033-03' = 'red', 
+             'R15-034-01' = 'red', 
+             'R15-034-03' = 'red', 
+             'R15-035-01' = 'red', 
+             'R15-035-02' = 'red', 
+             'R15-035-03' = 'red', 
+             'R15-036-03' = 'red', 
+             'R15-037-01' = 'red', 
+             'R15-037-02' = 'red', 
+             'R15-037-03' = 'red', 
+             'R15-038-01' = 'red', 
+             'R15-038-03' = 'red', 
+             'R15-039-01' = 'red', 
+             'R15-039-02' = 'red', 
+             'R15-040-02' = 'aquamarine4', 
+             'R15-042-01' = 'aquamarine4',
+             'R15-042-03' = 'aquamarine4',
+             'R15-043-01' = 'aquamarine4',
+             'R15-043-02' = 'aquamarine4',
+             'R15-043-03' = 'aquamarine4',
+             'R15-045-02' = 'aquamarine4',
+             'R15-045-03' = 'aquamarine4', 
+             'R15-046-01' = 'aquamarine4', 
+             'R15-046-02' = 'aquamarine4',
+             'R15-049-01' = 'deeppink1', 
+             'R15-050-01' = 'deeppink1', 
+             'R15-051-01' = 'deeppink1',
+             'R15-051-03' = 'deeppink1',
+             'R15-052-01' = 'deeppink1',
+             'R15-054-02' = 'coral', 
+             'R15-054-03' = 'coral', 
+             'R15-055-01' = 'coral', 
+             'R15-055-02' = 'coral',
+             'R15-056-01' = 'coral',
+             'R15-056-03' = 'coral', 
+             'R15-057-02' = 'coral', 
+             'R15-058-02' = 'coral', 
+             'R15-059-02' = 'coral', 
+             'R15-059-03' = 'coral',
+             'R15-062-01' = 'coral',
+             'R15-063-02' = 'coral', 
+             'R15-063-03' = 'coral',
+             'R15-064-01' = 'coral',
+             'R15-064-03' = 'coral',
+             'R15-067-01' = 'darkviolet',
+             'R15-067-02' = 'darkviolet',
+             'R15-068-02' = 'darkviolet',
+             'R15-069-03' = 'darkviolet',
+             'R15-070-01' = 'aquamarine4',
+             'R15-070-02' = 'aquamarine4', 
+             'R15-070-03' = 'aquamarine4', 
+             'R15-072-01' = 'gray0', 
+             'R15-072-02' = 'gray0', 
+             'R15-073-02' = 'gray0', 
+             'R15-075-02' = 'gray0', 
+             'R15-076-02' = 'gray0', 
+             'R15-077-01' = 'gray0', 
+             'R15-077-03' = 'gray0',
+             'R15-078-01' = 'springgreen3',
+             'R15-079-01' = 'springgreen3',
+             'R15-079-03' = 'springgreen3',
+             'R15-080-01' = 'springgreen3',
+             'R15-080-02' = 'springgreen3',
+             'R15-085-03' = 'midnightblue', 
+             'R15-088-01' = 'midnightblue',
+             'R15-091-01' = 'cyan3',
+             'R15-091-02' = 'cyan3', 
+             'R15-091-03' = 'cyan3', 
+             'R15-092-01' = 'cyan3', 
+             'R15-092-02' = 'cyan3', 
+             'R15-092-03' = 'cyan3', 
+             'R15-093-01' = 'cyan3', 
+             'R15-094-01' = 'cyan3',
+             'R15-094-02' = 'cyan3', 
+             'R15-095-01' = 'cyan3', 
+             'R15-096-03' = 'cyan3',
+             'R15-097-01' = 'cyan3',
+             'R15-097-02' = 'cyan3', 
+             'R15-097-03' = 'cyan3',
+             'R15-099-01' = 'cyan3',
+             'R15-099-02' = 'cyan3', 
+             'R15-099-03' = 'cyan3')
+
+myLabels <- c(tree_2015$tip.label, tree_2015$node.label)
+selColors1 <- myColors[match(myLabels[tree_2015$edge[,2]], names(myColors), nomatch=1)]
+
+
+print(myColors)
+
+tree_2015$tip.label
+
+labels <- as.vector(tree_full$tip.label)
+
+
+
+myLabels <- c(tree$tip.label, tree$node.label)
+
+tiff("location_2015_no_tech_phylo.tiff", units="in", width=4, height=11, res=600)
+plot.phylo(tree_2015, type= "phylogram", cex = .45, font = 2, adj = 1, tip.color = cols1[pop(m_amer_2015_no_tech_genind)], edge.color = selColors1, edge.width = 1.5)
+nodelabels(tree_2015$node.label, adj = c(1.3, -0.5), frame = "n", cex = 0.3,font = 3, xpd = TRUE)
+axis(side = 1)
+title(xlab = "Genetic distance (Provesti's Distance)")
+dev.off()
+
+pdf("location_2015_no_tech_phylo.pdf", width=4, height=8)
+plot.phylo(tree_2015, type= "phylogram", cex = .4, font = 2, adj = 1, tip.color = cols[pop(m_amer_2015_no_tech_genind)], edge.color = selColors)
+nodelabels(tree_2015$node.label, adj = c(1.3, -0.5), frame = "n", cex = 0.3,font = 3, xpd = TRUE)
+axis(side = 1)
+title(xlab = "Genetic distance (Provesti's Distance)")
+dev.off()
+
+
+tiff("location_2015_fan.tiff", units="in", width=6, height=6, res=600)
+plot.phylo(tree_2015, type= "fan", cex = .35, font = 2, adj = 1, tip.color = cols[pop(m_amer_2015_genind)])
+nodelabels(tree_2015$node.label, adj = c(1.3, -0.5), frame = "n", cex = 0.3,font = 3, xpd = TRUE)
+legend('bottomleft', legend = c("1", "2", "3", "4", "5", "6", "7", "8", "9", "10"),fill = cols, border = FALSE, bty = "n", cex = .65, horiz=F, title = "Groups")
+dev.off()
+
+pdf("location_2015_fan.pdf", width=6, height=6)
+plot.phylo(tree_2015, type= "fan", cex = .35, font = 2, adj = 1, tip.color = cols[pop(m_amer_2015_genind)])
+nodelabels(tree_2015$node.label, adj = c(1.3, -0.5), frame = "n", cex = 0.3,font = 3, xpd = TRUE)
+legend('bottomleft', legend = c("1", "2", "3", "4", "5", "6", "7", "8", "9", "10"), fill = cols, border = FALSE, bty = "n", cex = .65, horiz=F, title = "Groups")
+dev.off()
+
+```
+
+```{r}
+# 2015 rust isolates only!!!!!!
+
+m_amer_2015_cc_vcf <- read.vcfR( "~/gbs_pop_work/m_americana_paper_snp/2_2_21_work/m_americana_2015_alone/m_americana_2015_cc.vcf", verbose = FALSE )
+m_amer_2015_cc_genind <- vcfR2genind(m_amer_2015_cc_vcf)
+m_amer_2015_cc_genlight <- vcfR2genlight(m_amer_2015_cc_vcf)
+m_amer_2015_cc_meta <- read.delim("~/gbs_pop_work/m_americana_paper_snp/2_2_21_work/m_americana_2015_alone/m_americana_meta_2015_alone_cc.txt")
+
+
+#Clone Corr tree for cc data
+getwd()
+setwd("C:/Users/super/Documents/gbs_pop_work/m_americana_paper_snp/2_2_21_work/m_americana_2015_alone")
+
+
+tree_2015_cc <- aboot(m_amer_2015_cc_genind, tree = "nj", distance = provesti.dist, sample = 1000, showtree = F, cutoff = 50, quiet = F)
+
+saveRDS(tree_2015_cc, "m_americana_2015_cc_r_tree")
+tree_2015_cc <- readRDS("C:/Users/super/Documents/gbs_pop_work/m_americana_paper_snp/2_2_21_work/m_americana_clone_work/m_americana_2015_cc_r_tree")
+
+getwd()
+setwd("C:/Users/super/Documents/gbs_pop_work/m_americana_paper_snp/2_2_21_work/m_americana_clone_work")
+
+
+#Clone Corr Phylo by host wild or cultivated
+cols <- brewer.pal(n = 3, name = "Dark2")
+pop(m_amer_2015_cc_genind) <- m_amer_2015_cc_meta$Host.Designation
+m_amer_2015_cc_genind$pop
+
+tiff("wild_or_cultivated_2015_cc_phylo.tiff", units="in", width=4, height=11, res=600)
+plot.phylo(tree_2015_cc, type= "phylogram", cex = .55, font = 2, adj = 1, tip.color = cols[pop(m_amer_2015_cc_genind)])
+nodelabels(tree_2015_cc$node.label, adj = c(1.3, -0.5), frame = "n", cex = 0.3,font = 3, xpd = TRUE)
+legend('bottomleft', legend = c("Cultivated", "Wild"), fill = cols, border = FALSE, bty = "n", cex = .75, horiz= T)
+axis(side = 1)
+title(xlab = "Genetic distance (Provesti's Distance)")
+dev.off()
+
+pdf("wild_or_cultivated_2015_cc_phylo.pdf", width=4, height=11)
+plot.phylo(tree_2015_cc, type= "phylogram", cex = .55, font = 2, adj = 1, tip.color = cols[pop(m_amer_2015_cc_genind)])
+nodelabels(tree_2015_cc$node.label, adj = c(1.3, -0.5), frame = "n", cex = 0.3,font = 3, xpd = TRUE)
+legend('bottomleft', legend = c("Cultivated", "Wild"), fill = cols, border = FALSE, bty = "n", cex = .75, horiz= T)
+axis(side = 1)
+title(xlab = "Genetic distance (Provesti's Distance)")
+dev.off()
+
+tiff("wild_or_cultivated_2015_cc_fan.tiff", units="in", width=6, height=7, res=600)
+plot.phylo(tree_2015_cc, type= "fan", cex = .6, font = 2, adj = 1, tip.color = cols[pop(m_amer_2015_cc_genind)])
+nodelabels(tree_2015_cc$node.label, adj = c(1.3, -0.5), frame = "n", cex = 0.3,font = 3, xpd = TRUE)
+legend('bottomleft', legend = c("Cultivated", "Wild"), fill = cols, border = FALSE, bty = "n", cex = .9)
+dev.off()
+
+pdf("wild_or_cultivated_2015_cc_fan.pdf", width=6, height=7)
+plot.phylo(tree_2015_cc, type= "fan", cex = .6, font = 2, adj = 1, tip.color = cols[pop(m_amer_2015_cc_genind)])
+nodelabels(tree_2015_cc$node.label, adj = c(1.3, -0.5), frame = "n", cex = 0.3,font = 3, xpd = TRUE)
+legend('bottomleft', legend = c("Cultivated", "Wild"), fill = cols, border = FALSE, bty = "n", cex = .9)
+dev.off()
+
+
+
+```
+
+```{r}
+
+# 2015 Phylo by location defined by geographic distance of 50 Miles
+
+pop(m_amer_2015_cc_genind) <- lat_long_dist_meta_2015_cc$cluster
+cols <- brewer.pal(n = 10, name = "Paired")
+
+nb.cols <- 10
+mycolors <- colorRampPalette(brewer.pal(8, "Dark2"))(nb.cols)
+
+tiff("location_2015_cc_phylo.tiff", units="in", width=4, height=11, res=600)
+plot.phylo(tree_2015_cc, type= "phylogram", cex = .5, font = 2, adj = 1, tip.color = mycolors[pop(m_amer_2015_cc_genind)])
+nodelabels(tree_2015_cc$node.label, adj = c(1.3, -0.5), frame = "n", cex = 0.3,font = 3, xpd = TRUE)
+legend('bottomright', legend = c("1", "2", "3", "4", "5", "6", "7", "8", "9", "10"), fill = cols, border = FALSE, bty = "n", cex = .55, horiz=F, title = "Groups")
+axis(side = 1)
+title(xlab = "Genetic distance (Provesti's Distance)")
+dev.off()
+
+getwd()
+
+tiff("location_2015_cc_phylo.tiff", units="in", width=4, height=11, res=600)
+plot.phylo(tree_2015_cc, type= "phylogram", cex = .5, font = 2, adj = 1, tip.color = c('cyan3', 'blue', 'red', 'aquamarine4', 'deeppink1', 'coral','darkviolet','gray0','springgreen3','midnightblue'))
+nodelabels(tree_2015_cc$node.label, adj = c(1.3, -0.5), frame = "n", cex = 0.3,font = 3, xpd = TRUE)
+legend('bottomright', legend = c("1", "2", "3", "4", "5", "6", "7", "8", "9", "10"), fill = c('cyan3', 'blue', 'red', 'aquamarine4', 'deeppink1', 'coral','darkviolet','gray0','springgreen3','midnightblue'), border = FALSE, bty = "n", cex = .55, horiz=F, title = "Groups")
+axis(side = 1)
+title(xlab = "Genetic distance (Provesti's Distance)")
+dev.off()
+
+pdf("location_2015_cc_phylo.pdf", width=4, height=11)
+plot.phylo(tree_2015_cc, type= "phylogram", cex = .5, font = 2, adj = 1, tip.color = cols[pop(m_amer_2015_cc_genind)])
+nodelabels(tree_2015_cc$node.label, adj = c(1.3, -0.5), frame = "n", cex = 0.3,font = 3, xpd = TRUE)
+legend('bottomright', legend = c("1", "2", "3", "4", "5", "6", "7", "8", "9", "10"), fill = cols, border = FALSE, bty = "n", cex = .55, horiz=F,title = "Groups")
+axis(side = 1)
+title(xlab = "Genetic distance (Provesti's Distance)")
+dev.off()
+
+pdf("location_2015_cc_phylo.pdf", width=4, height=11)
+plot.phylo(tree_2015_cc, type= "phylogram", cex = .5, font = 2, adj = 1, tip.color = c('cyan3', 'blue', 'red', 'aquamarine4', 'deeppink1', 'coral','darkviolet','gray0','springgreen3','midnightblue'))
+nodelabels(tree_2015_cc$node.label, adj = c(1.3, -0.5), frame = "n", cex = 0.3,font = 3, xpd = TRUE)
+legend('bottomright', legend = c("1", "2", "3", "4", "5", "6", "7", "8", "9", "10"), fill = c('cyan3', 'blue', 'red', 'aquamarine4', 'deeppink1', 'coral','darkviolet','gray0','springgreen3','midnightblue'), border = FALSE, bty = "n", cex = .55, horiz=F,title = "Groups")
+axis(side = 1)
+title(xlab = "Genetic distance (Provesti's Distance)")
+dev.off()
+
+
+tiff("location_2015_cc_fan.tiff", units="in", width=6, height=7, res=600)
+plot.phylo(tree_2015_cc, type= "fan", cex = .5, font = 2, adj = 1, tip.color = cols[pop(m_amer_2015_cc_genind)])
+nodelabels(tree_2015_cc$node.label, adj = c(1.3, -0.5), frame = "n", cex = 0.3,font = 3, xpd = TRUE)
+legend('bottomleft', legend = c("1", "2", "3", "4", "5", "6", "7", "8", "9", "10"),fill = cols, border = FALSE, bty = "n", cex = .65, horiz=F, title = "Groups")
+dev.off()
+
+pdf("location_2015_cc_fan.pdf", width=6, height=7)
+plot.phylo(tree_2015_cc, type= "fan", cex = .5, font = 2, adj = 1, tip.color = cols[pop(m_amer_2015_cc_genind)])
+nodelabels(tree_2015_cc$node.label, adj = c(1.3, -0.5), frame = "n", cex = 0.3,font = 3, xpd = TRUE)
+legend('bottomleft', legend = c("1", "2", "3", "4", "5", "6", "7", "8", "9", "10"), fill = cols, border = FALSE, bty = "n", cex = .65, horiz=F, title = "Groups")
+dev.off()
+
+```
+
+
+
+```{r}
+#minimum spanning network for Clone corrected by host type
+library(igraph)
+ploidy(m_amer_cc_genlight) <- 2
+pop(m_amer_cc_genlight) <- lat_long_dist_meta_2015_cc$cluster
+
+cc_rubi.dist <- bitwise.dist(m_amer_cc_genind)
+cc_rubi.msn <- poppr.msn(m_amer_cc_genind, cc_rubi.dist, showplot = FALSE, include.ties = T)
+
+node.size <- m_amer_cc_meta$num_iso_per
+names(node.size) <- indNames(m_amer_cc_genind)
+vertex.attributes(cc_rubi.msn$graph)$size <- node.size
+
+set.seed(9)
+plot_poppr_msn(m_amer_cc_genind, cc_rubi.msn , palette = brewer.pal(n = nPop(m_amer_cc_genind), name = "Dark2"), gadj = 10, inds ="" )
+
+```
+
+```{r}
+#PCA for cc data
+
+m_amer_2015_cc_no_tech_vcf <- read.vcfR( "~/gbs_pop_work/m_americana_paper_snp/2_2_21_work/m_americana_2015_alone/m_amer_2015_no_tech_cc.vcf", verbose = FALSE )
+m_amer_2015_cc_no_tech_genind <- vcfR2genind(m_amer_2015_cc_no_tech_vcf)
+m_amer_2015_cc_no_tech_genlight <- vcfR2genlight(m_amer_2015_cc_no_tech_vcf)
+m_amer_2015_cc_no_tech_meta <- read.delim("~/gbs_pop_work/m_americana_paper_snp/2_2_21_work/m_americana_2015_alone/m_amer_2015_no_tech_cc_meta.txt")
+
+
+ploidy(m_amer_2015_cc_no_tech_genlight) <- 2
+pop(m_amer_2015_cc_no_tech_genlight) <- m_amer_2015_cc_no_tech_meta$Group.based.on.50.Miles.clustering.
+
+
+cc_rubi.pca <- glPca(m_amer_2015_cc_no_tech_genlight, nf = 4)
+barplot(100*cc_rubi.pca$eig/sum(cc_rubi.pca$eig), col = heat.colors(50), main="PCA Eigenvalues")
+title(ylab="Percent of variance\nexplained", line = 2)
+title(xlab="Eigenvalues", line = 1)
+
+
+cc_rubi.pca$eig[2]/ (sum(cc_rubi.pca$eig))
+cc_rubi.pca$eig[1]/ (sum(cc_rubi.pca$eig))
+
+cc_rubi.pca$eig[3]/ (sum(cc_rubi.pca$eig))
+cc_rubi.pca$eig[4]/ (sum(cc_rubi.pca$eig))
+rubi.pca.scores <- as.data.frame(cc_rubi.pca$scores)
+rubi.pca.scores$pop <- pop(m_amer_2015_cc_no_tech_genlight)
+
+num_indv_per_lineage_2015 <- read.delim("~/gbs_pop_work/m_americana_paper_snp/2_2_21_work/m_americana_2015_alone/num_indv_per_lineage_2015.txt")
+
+rubi.pca.scores <- cbind(rubi.pca.scores,m_amer_2015_cc_no_tech_meta$number_isolates_per_lineage)
+
+colnames(rubi.pca.scores) <- c("PC1", "PC2", "PC3", "PC4", "Population", "Size of Clonal Lineage")
+
+num_indv_per_lineage_2015$pch <- as.factor(num_indv_per_lineage_2015$pch)
+
+library(ggplot2)
+set.seed(9)
+
+rubi.pca.scores
+getwd()
+
+
+tiff("pca_2015_cc_wout_shapes_pc1_2.tiff", units="in", width=4, height=4, res=600)
+ggplot(rubi.pca.scores, aes(x=PC1, y=PC2, colour= Population)) +
+  geom_point(size= rubi.pca.scores$`Size of Clonal Lineage`) +
+  scale_color_manual(values = c('cyan3', 'blue', 'red', 'aquamarine4', 'deeppink1', 'coral','darkviolet','gray0','springgreen3','midnightblue')) +
+  geom_hline(yintercept = 0) +
+  geom_vline(xintercept = 0) +
+  theme_bw() + 
+  theme(legend.title = element_text(colour="black", size=10, face="bold")) +
+  theme(legend.title = element_blank()) +
+  theme(legend.position = "none") +
+  xlab("PC1 (3.18%)") + 
+  ylab("PC2 (3.11%)")
+  
+dev.off()
+
+
+tiff("pca_2015_cc_wout_shapes_pc2_3.tiff", units="in", width=4, height=4, res=600)
+ggplot(rubi.pca.scores, aes(x=PC2, y=PC3, colour= Population)) +
+  geom_point(size= rubi.pca.scores$`Size of Clonal Lineage`) +
+  scale_color_manual(values = c('cyan3', 'blue', 'red', 'aquamarine4', 'deeppink1', 'coral','darkviolet','gray0','springgreen3','midnightblue')) +
+  geom_hline(yintercept = 0) +
+  geom_vline(xintercept = 0) +
+  theme_bw() + 
+  theme(legend.title = element_text(colour="black", size=10, face="bold")) +
+  theme(legend.title = element_blank()) +
+  theme(legend.position = "none") +
+  xlab("PC2 (2.6%)") + 
+  ylab("PC3 (2.4%)")
+  
+dev.off()
+
+
+tiff("pca_2015_cc_wout_shapes_pc3_4.tiff", units="in", width=4, height=4, res=600)
+ggplot(rubi.pca.scores, aes(x=PC3, y=PC4, colour= Population)) +
+  geom_point(size= rubi.pca.scores$`Size of Clonal Lineage`) +
+  scale_color_manual(values = c('cyan3', 'blue', 'red', 'aquamarine4', 'deeppink1', 'coral','darkviolet','gray0','springgreen3','midnightblue')) +
+  geom_hline(yintercept = 0) +
+  geom_vline(xintercept = 0) +
+  theme_bw() + 
+  theme(legend.title = element_text(colour="black", size=10, face="bold")) +
+  theme(legend.title = element_blank()) +
+  theme(legend.position = "none") +
+  xlab("PC3 (2.6%)") + 
+  ylab("PC4 (2.4%)")
+  
+dev.off()
+
+setwd("~/gbs_pop_work/m_americana_paper_snp/2_2_21_work/m_americana_2015_alone")
+tiff("pca_2015_cc_no_shapes.tiff", units="in", width=4, height=4, res=600)
+ggplot(rubi.pca.scores, aes(x=PC1, y=PC2, colour= Population)) +
+  geom_point(size= rubi.pca.scores$`Size of Clonal Lineage`) +
+  scale_color_manual(values = c('cyan3', 'blue', 'red', 'aquamarine4', 'deeppink1', 'coral','darkviolet','gray0','springgreen3','midnightblue')) +
+  geom_hline(yintercept = 0) +
+  geom_vline(xintercept = 0) +
+  theme_bw() + 
+  theme(legend.title = element_text(colour="black", size=10, face="bold")) +
+  theme(legend.title = element_blank()) +
+  theme(legend.position = "none") +
+  xlab("PC1 (3.1%)") + 
+  ylab("PC2 (3.1%)")
+  
+dev.off()
+
+pdf("pca_2015_cc.pdf", width=4, height=4)
+ggplot(rubi.pca.scores, aes(x=PC1, y=PC2, colour= Population)) +
+  geom_point(size= rubi.pca.scores$`Size of Clonal Lineage`, pch = num_indv_per_lineage_2015$pch) +
+  scale_color_manual(values = c('cyan3', 'blue', 'red', 'aquamarine4', 'deeppink1', 'coral','darkviolet','gray0','springgreen3','midnightblue')) +
+  geom_hline(yintercept = 0) +
+  geom_vline(xintercept = 0) +
+  theme_bw() + 
+  theme(legend.title = element_text(colour="black", size=10, face="bold")) +
+  theme(legend.title = element_blank()) +
+  theme(legend.position = "none") +
+  xlab("PC1 (3.2%)") + 
+  ylab("PC2 (3.0%)")
+  
+dev.off()
+
+
+```
+
+
+```{r}
+getwd()
+
+#combine PCas and isolate map
+library(ggpubr)
+tiff("pc_and_map_2015.tiff", units="in", width=12, height=5, res=600)
+par(mfrow=c(2,2))
+ggplot(rubi.pca.scores, aes(x=PC1, y=PC2, colour= Population)) +
+  geom_point(size= rubi.pca.scores$`Size of Clonal Lineage`, pch = num_indv_per_lineage_2015$pch) +
+  scale_color_manual(values = c('cyan3', 'blue', 'red', 'aquamarine4', 'deeppink1', 'coral','darkviolet','gray0','springgreen3','midnightblue')) +
+  geom_hline(yintercept = 0) +
+  geom_vline(xintercept = 0) +
+  theme_bw() + 
+  theme(legend.title = element_text(colour="black", size=10, face="bold")) +
+  theme(legend.title = element_blank()) +
+  theme(legend.position = "none")
+
+
+map('state', region= c('new york', 'penn', 'vermont', 'ohio', 'indiana', 'new jersey', 'connecticut', 'massachusetts', 'new hampshire', 'maine', 'michigan', 'west virginia'),col='gray90', fill=T) 
+    points(groupings_2015_lat_long$Logitude[1:19], groupings_2015_lat_long$Latitude[1:19], pch= 16, col='cyan3', cex=1) 
+    points(groupings_2015_lat_long$Logitude[20:25], groupings_2015_lat_long$Latitude[20:25], pch= 6, col='blue', cex=1) 
+    points(groupings_2015_lat_long$Logitude[26:55], groupings_2015_lat_long$Latitude[26:55], pch= 18, col='red', cex=1) 
+    points(groupings_2015_lat_long$Logitude[56:68], groupings_2015_lat_long$Latitude[56:68], pch= 0, col='aquamarine4', cex=1) 
+    points(groupings_2015_lat_long$Logitude[69:73], groupings_2015_lat_long$Latitude[69:73], pch= 5, col='deeppink1', cex=1) 
+    points(groupings_2015_lat_long$Logitude[74:88], groupings_2015_lat_long$Latitude[74:88], pch= 14, col='coral', cex=1)  
+    points(groupings_2015_lat_long$Logitude[89:92], groupings_2015_lat_long$Latitude[89:92], pch= 4, col='darkviolet', cex=1) 
+    points(groupings_2015_lat_long$Logitude[93:99], groupings_2015_lat_long$Latitude[93:99], pch= 1, col='gray0', cex=1) 
+    points(groupings_2015_lat_long$Logitude[100:104], groupings_2015_lat_long$Latitude[100:104], pch= 13, col='springgreen3', cex=1) 
+    points(groupings_2015_lat_long$Logitude[105:106], groupings_2015_lat_long$Latitude[105:106], pch= 17, col='midnightblue', cex=1.3) 
+    legend("bottomleft", legend = c("1", "2", "3", "4", "5", "6", "7", "8", "9", "10"), pch = c(16,6,18,0,5,14,4,1,13,17), col = c('cyan3', 'blue', 'red', 'aquamarine4', 'deeppink1', 'coral','darkviolet','gray0','springgreen3','midnightblue'), cex = .7, title = "Groups", horiz=F)
+
+dev.off()
+```
+
+
+```{r}
+#barplot for percent clonal lineage within shrub or within field
+
+library(ggplot2)
+library(viridis)
+library(hrbrthemes)
+
+
+
+percent_clonal_data <- read.delim("~/gbs_pop_work/m_americana_paper_snp/percent_clonal_data.txt")
+
+setwd("C:/Users/super/Documents/gbs_pop_work/m_americana_paper_snp/2_2_21_work/m_americana_clone_work")
+
+tiff("Clonal_porportion_barplot.tiff", units="in", width=5, height=4, res=600)
+ggplot(percent_clonal_data, aes(x=id, y=value, fill=condition, label = value)) + 
+  geom_bar(position="fill", stat="identity", color= "black") +
+  ggtitle("Percent of Clonal Isolates Sharing Shrub or Field") +
+  theme(plot.title = element_text(hjust = 0)) +
+  scale_fill_brewer(palette="Dark2") +
+  xlab("") +
+  theme_bw() +
+  theme(axis.title.x = element_text(colour = "black")) +
+  ylab("Percent") + 
+  theme(axis.title.y = element_text(size = 15)) +
+  theme(legend.title = element_blank()) +
+  scale_y_continuous(labels = scales::percent, breaks=c(0,1)) +
+  geom_text(size = 5, position = position_fill(vjust = 0.5), colour = "white") +
+  scale_x_discrete(breaks=c("field","shrub"),
+                   labels=c("Percent Within Field", "Percent within Shrub"))
+  dev.off()
+
+pdf("Clonal_porportion_barplot.pdf", width=5, height=4)
+ggplot(percent_clonal_data, aes(x=id, y=value, fill=condition, label = value)) + 
+  geom_bar(position="fill", stat="identity", color= "black") +
+  ggtitle("Percent of Clonal Isolates Sharing Shrub or Field") +
+  theme(plot.title = element_text(hjust = 0)) +
+  scale_fill_brewer(palette="Dark2") +
+  xlab("") +
+  theme_bw() +
+  theme(axis.title.x = element_text(colour = "black")) +
+  ylab("Percent") + 
+  theme(axis.title.y = element_text(size = 15)) +
+  theme(legend.title = element_blank()) +
+  scale_y_continuous(labels = scales::percent, breaks=c(0,1)) +
+  geom_text(size = 5, position = position_fill(vjust = 0.5), colour = "white") +
+  scale_x_discrete(breaks=c("field","shrub"),
+                   labels=c("Percent Within Field", "Percent within Shrub"))
+  dev.off()
+  
+```
+
+```{r}
+#DAPC of 2015 and 2017 separate
+
+m_amer_cc_2015.dapc <- dapc(m_amer_2015_cc_genlight, n.pca = 3, n.da = 2)
+m_amer_cc_2015.dapc$
+scatter(m_amer_cc_2015.dapc, col = c('cyan3', 'blue', 'red', 'aquamarine4', 'deeppink1', 'coral','darkviolet','gray0','springgreen3','midnightblue'), cex = 2, legend = TRUE, clabel = F, posi.leg = "bottomleft", scree.pca = TRUE,
+        posi.pca = "topleft", cleg = 0.75)
+
+m_amer_cc_2017.dapc <- dapc(m_amer_2017_cc_genlight, n.pca = 3, n.da = 2)
+
+scatter(m_amer_cc_2017.dapc, col = c('#1B9E77', '#D95F02', '#7570B3', '#E7298A'), cex = 2, legend = TRUE, clabel = F, posi.leg = "bottomleft", scree.pca = TRUE,
+        posi.pca = "topleft", cleg = 0.75)
+
+
+setwd("~/gbs_pop_work/m_americana_paper_snp/2_2_21_work/m_americana_2015_alone")
+tiff("pca_2015_cc_w_shapes.tiff", units="in", width=4, height=4, res=600)
+ggplot(rubi.pca.scores, aes(x=PC1, y=PC2, colour= Population)) +
+  geom_point(size= rubi.pca.scores$`Size of Clonal Lineage`, pch = num_indv_per_lineage_2015$pch) +
+  scale_color_manual(values = c('cyan3', 'blue', 'red', 'aquamarine4', 'deeppink1', 'coral','darkviolet','gray0','springgreen3','midnightblue')) +
+  geom_hline(yintercept = 0) +
+  geom_vline(xintercept = 0) +
+  theme_bw() + 
+  theme(legend.title = element_text(colour="black", size=10, face="bold")) +
+  theme(legend.title = element_blank()) +
+  theme(legend.position = "none") +
+  xlab("PC1 (3.2%)") + 
+  ylab("PC2 (3.0%)")
+
+```
+
+
+```{r}
+library(StAMPP)
+
+m_amer_2017_meta_with_num_groups <- read.delim("~/gbs_pop_work/m_americana_paper_snp/2_2_21_work/m_americana_2017_alone/m_amer_2017_meta_with_num_groups.txt")
+
+pop(m_amer_2015_genlight)<- lat_long_dist_meta_2015$cluster
+pop(m_amer_2017_full_genlight)<- m_amer_2017_full_meta$Groups
+pop(m_amer_full_genlight)<- m_amer_full_meta$Year.Collected
+ploidy(m_amer_2017_full_genlight) <- 2
+
+
+fst_2015 <- stamppFst(m_amer_2015_genlight, nboots = 1000, percent = 95, nclusters = 1)
+fst_2015$Fsts
+fst_2015_data <- as.matrix(fst_2015$Fsts)
+write.csv(fst_2015$Fsts, "~/gbs_pop_work/m_americana_paper_snp/Fsts/2015_fst.txt")
+
+m_amer_2015_genlight_wild_or_cul<- m_amer_2015_genlight
+pop(m_amer_2015_genlight_wild_or_cul)<- m_amer_2015_meta$Host.Designation
+
+fst_2015_wild_or_c <- stamppFst(m_amer_2015_genlight_wild_or_cul, nboots = 1000, percent = 95, nclusters = 1)
+fst_2015_wild_or_c$Fsts
+fst_2015_wild_or_c_data <- as.matrix(fst_2015_wild_or_c$Fsts)
+write.csv(fst_2015_wild_or_c$Fsts, "~/gbs_pop_work/m_americana_paper_snp/Fsts/fst_2015_wild_or_c2015_fst.txt")
+
+
+fst_2017 <- stamppFst(m_amer_2017_full_genlight, nboots = 1000, percent = 95, nclusters = 1)
+fst_2017$Bootstraps
+fst_2017_data <- as.matrix(fst_2017$Fsts)
+write.csv(fst_2017$Fsts, "~/gbs_pop_work/m_americana_paper_snp/Fsts/2017_fst.txt")
+
+fst_all <- stamppFst(m_amer_full_genlight, nboots = 1000, percent = 95, nclusters = 1)
+fst_all$Fsts
+fst_all_data <- as.matrix(fst_all$Fsts)
+
+write.csv(fst_all$Fsts, "~/gbs_pop_work/m_americana_paper_snp/Fsts/all_fst.txt")
+
+
+
+
+
+ploidy(m_amer_2015_no_tech_genlight) <- 2
+pop(m_amer_2015_no_tech_genlight) <- m_amer_2015_no_tech_meta$Group.based.on.50.Miles.clustering.
+
+fst_2015 <- stamppFst(m_amer_2015_no_tech_genlight, nboots = 1000, percent = 95, nclusters = 1)
+write.csv(fst_2015$Fsts, "~/gbs_pop_work/m_americana_paper_snp/Fsts/2015_fst.txt")
+write.csv(fst_2015$Pvalues, "~/gbs_pop_work/m_americana_paper_snp/Fsts/2015_pval.txt")
+
+ploidy(m_amer_2017_full_no_tech_genlight) <- 2
+pop(m_amer_2017_full_no_tech_genlight) <- m_amer_2017_full_no_tech_meta$location
+
+fst_2017 <- stamppFst(m_amer_2017_full_no_tech_genlight, nboots = 1000, percent = 95, nclusters = 1)
+write.csv(fst_2017$Fsts, "~/gbs_pop_work/m_americana_paper_snp/Fsts/2017_fst.txt")
+write.csv(fst_2017$Pvalues, "~/gbs_pop_work/m_americana_paper_snp/Fsts/2017_pval.txt")
+
+
+ploidy(m_amer_2015_no_tech_genlight) <- 2
+pop(m_amer_2015_no_tech_genlight) <- m_amer_2015_no_tech_meta$Host_Designation
+
+fst_2015_wild_o <- stamppFst(m_amer_2015_no_tech_genlight, nboots = 1000, percent = 95, nclusters = 1)
+write.csv(fst_2015_wild_o$Fsts, "~/gbs_pop_work/m_americana_paper_snp/Fsts/2015__wild_fst.txt")
+write.csv(fst_2015_wild_o$Pvalues, "~/gbs_pop_work/m_americana_paper_snp/Fsts/2015_wild_pval.txt")
+
+ploidy(m_amer_full_no_tech_genlight) <- 2
+pop(m_amer_full_no_tech_genlight) <- m_amer_full_no_tech_meta$Group.based.on.50.Miles.clustering.
+
+fst_all <- stamppFst(m_amer_full_no_tech_genlight, nboots = 1000, percent = 95, nclusters = 1)
+write.csv(fst_all$Fsts, "~/gbs_pop_work/m_americana_paper_snp/Fsts/all_fst.txt")
+write.csv(fst_all$Pvalues, "~/gbs_pop_work/m_americana_paper_snp/Fsts/all_pval.txt")
+
+
+
+```
+
+```{r}
+pop(m_amer_2015_no_tech_genind)
+
+set.seed(20160308) # Setting a seed for a consistent result
+grp <- find.clusters(m_amer_2015_cc_no_tech_genind, max.n.clust = 60, n.pca = NULL, choose.n.clust = FALSE, criterion = "goodfit") 
+names(grp)
+grp$grp
+```
+
+```{r}
+m_amer_2015_no_tech_genclone <- as.genclone(m_amer_2015_no_tech_genind)
+
+pop(m_amer_2015_no_tech_genclone) <- m_amer_2015_no_tech_meta$
+ploidy(m_amer_2015_no_tech_genclone) <- 2
+m_amer_2015_no_tech_genclone$mlg <- m_amer_2015_no_tech_meta$Clonal_group
+stats_for_2015 <-poppr(m_amer_2015_no_tech_genclone)
+
+
+```
+
+```{r}
+m_amer_host_sub_vcf <- read.vcfR( "~/gbs_pop_work/m_americana_paper_snp/2_2_21_work/m_americana_2015_alone/host_type.vcf", verbose = FALSE )
+m_amer_host_sub_genlight <- vcfR2genlight(m_amer_host_sub_vcf)
+m_amer_host_sub_meta <- read.delim("~/gbs_pop_work/m_americana_paper_snp/2_2_21_work/m_americana_2015_alone/summery_wild_vs_col.txt")
+
+ploidy(m_amer_host_sub_genlight) <- 2
+pop(m_amer_host_sub_genlight) <- m_amer_host_sub_meta$host
+
+indNames(m_amer_host_sub_genlight) <- m_amer_host_sub_meta$name
+
+
+fst_2015_wild_o <- stamppFst(m_amer_host_sub_genlight, nboots = 1000, percent = 95, nclusters = 1)
+write.csv(fst_2015_wild_o$Fsts, "~/gbs_pop_work/m_americana_paper_snp/Fsts/2015__wild_fst.txt")
+write.csv(fst_2015_wild_o$Pvalues, "~/gbs_pop_work/m_americana_paper_snp/Fsts/2015_wild_pval.txt")
+
+library(geneclust)
+Fst
+```
+

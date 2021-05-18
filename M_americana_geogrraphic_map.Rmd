@@ -1,0 +1,78 @@
+---
+output: html_document
+editor_options: 
+  chunk_output_type: console
+---
+```{r}
+# using gps data
+library(maps)
+library(mapdata)
+library(maptools) #shape files
+
+
+setwd("C:/Users/super/Documents/gbs_pop_work/m_americana_paper_snp/Isolate_map_work")
+
+groupings_2015_lat_long <- read.delim("~/gbs_pop_work/m_americana_paper_snp/Isolate_map_work/groupings_lat_long.txt")
+
+tiff("map_of_2015_iso_shapes.tiff", units="in", width=5, height=5, res=600)
+map('state', region= c('new york', 'penn', 'vermont', 'ohio', 'indiana', 'new jersey', 'connecticut', 'massachusetts', 'new hampshire', 'maine', 'michigan', 'west virginia'),col='gray90', fill=T)
+    points(groupings_2015_lat_long$Logitude[1:19], groupings_2015_lat_long$Latitude[1:19], pch= 16, col='cyan3', cex=1)
+    points(groupings_2015_lat_long$Logitude[20:25], groupings_2015_lat_long$Latitude[20:25], pch= 6, col='blue', cex=1)
+    points(groupings_2015_lat_long$Logitude[26:55], groupings_2015_lat_long$Latitude[26:55], pch= 18, col='red', cex=1)
+    points(groupings_2015_lat_long$Logitude[56:68], groupings_2015_lat_long$Latitude[56:68], pch= 0, col='aquamarine4', cex=1)
+    points(groupings_2015_lat_long$Logitude[69:73], groupings_2015_lat_long$Latitude[69:73], pch= 5, col='deeppink1', cex=1)
+    points(groupings_2015_lat_long$Logitude[74:88], groupings_2015_lat_long$Latitude[74:88], pch= 14, col='coral', cex=1)
+    points(groupings_2015_lat_long$Logitude[89:92], groupings_2015_lat_long$Latitude[89:92], pch= 4, col='darkviolet', cex=1)
+    points(groupings_2015_lat_long$Logitude[93:99], groupings_2015_lat_long$Latitude[93:99], pch= 1, col='gray0', cex=1)
+    points(groupings_2015_lat_long$Logitude[100:104], groupings_2015_lat_long$Latitude[100:104], pch= 13, col='springgreen3', cex=1)
+    points(groupings_2015_lat_long$Logitude[105:106], groupings_2015_lat_long$Latitude[105:106], pch= 17, col='midnightblue', cex=1.3)
+    legend("bottomleft", legend = c("1", "2", "3", "4", "5", "6", "7", "8", "9", "10"), pch = c(16,6,18,0,5,14,4,1,13,17), col = c('cyan3', 'blue', 'red', 'aquamarine4', 'deeppink1', 'coral','darkviolet','gray0','springgreen3','midnightblue'), cex = .7, title = "Groups", horiz=F, bg = "white")
+dev.off()
+
+tiff("map_of_2015_iso_no_shapes.tiff", units="in", width=5, height=5, res=600)
+map('state', region= c('new york', 'penn', 'vermont', 'ohio', 'indiana', 'new jersey', 'connecticut', 'massachusetts', 'new hampshire', 'maine', 'michigan', 'west virginia'),col='gray90', fill=T)
+    points(groupings_2015_lat_long$Logitude[1:19], groupings_2015_lat_long$Latitude[1:19], pch= 16, col='cyan3', cex=1)
+    points(groupings_2015_lat_long$Logitude[20:25], groupings_2015_lat_long$Latitude[20:25], pch= 16, col='blue', cex=1)
+    points(groupings_2015_lat_long$Logitude[26:55], groupings_2015_lat_long$Latitude[26:55], pch= 16, col='red', cex=1)
+    points(groupings_2015_lat_long$Logitude[56:68], groupings_2015_lat_long$Latitude[56:68], pch= 16, col='aquamarine4', cex=1)
+    points(groupings_2015_lat_long$Logitude[69:73], groupings_2015_lat_long$Latitude[69:73], pch= 16, col='deeppink1', cex=1)
+    points(groupings_2015_lat_long$Logitude[74:88], groupings_2015_lat_long$Latitude[74:88], pch= 16, col='coral', cex=1)
+    points(groupings_2015_lat_long$Logitude[89:92], groupings_2015_lat_long$Latitude[89:92], pch= 16, col='darkviolet', cex=1)
+    points(groupings_2015_lat_long$Logitude[93:99], groupings_2015_lat_long$Latitude[93:99], pch= 16, col='gray0', cex=1)
+    points(groupings_2015_lat_long$Logitude[100:104], groupings_2015_lat_long$Latitude[100:104], pch= 16, col='springgreen3', cex=1)
+    points(groupings_2015_lat_long$Logitude[105:106], groupings_2015_lat_long$Latitude[105:106], pch= 16, col='midnightblue', cex=1.3)
+    legend("bottomleft", legend = c("1", "2", "3", "4", "5", "6", "7", "8", "9", "10"), pch = c(16,16,16,16,16,16,16,16,16,16), col = c('cyan3', 'blue', 'red', 'aquamarine4', 'deeppink1', 'coral','darkviolet','gray0','springgreen3','midnightblue'), cex = .7, title = "Groups", horiz=F, bg = "white")
+dev.off()
+
+pdf("map_of_2015_iso.pdf", width=5, height=5)
+map('state', region= c('new york', 'penn', 'vermont', 'ohio', 'indiana', 'new jersey', 'connecticut', 'massachusetts', 'new hampshire', 'maine', 'michigan', 'west virginia'),col='gray90', fill=T)
+    points(groupings_2015_lat_long$Logitude[1:19], groupings_2015_lat_long$Latitude[1:19], pch= 16, col='cyan3', cex=1)
+    points(groupings_2015_lat_long$Logitude[20:25], groupings_2015_lat_long$Latitude[20:25], pch= 6, col='blue', cex=1)
+    points(groupings_2015_lat_long$Logitude[26:55], groupings_2015_lat_long$Latitude[26:55], pch= 18, col='red', cex=1)
+    points(groupings_2015_lat_long$Logitude[56:68], groupings_2015_lat_long$Latitude[56:68], pch= 0, col='aquamarine4', cex=1)
+    points(groupings_2015_lat_long$Logitude[69:73], groupings_2015_lat_long$Latitude[69:73], pch= 5, col='deeppink1', cex=1)
+    points(groupings_2015_lat_long$Logitude[74:88], groupings_2015_lat_long$Latitude[74:88], pch= 14, col='coral', cex=1)
+    points(groupings_2015_lat_long$Logitude[89:92], groupings_2015_lat_long$Latitude[89:92], pch= 4, col='darkviolet', cex=1)
+    points(groupings_2015_lat_long$Logitude[93:99], groupings_2015_lat_long$Latitude[93:99], pch= 1, col='gray0', cex=1)
+    points(groupings_2015_lat_long$Logitude[100:104], groupings_2015_lat_long$Latitude[100:104], pch= 13, col='springgreen3', cex=1)
+    points(groupings_2015_lat_long$Logitude[105:106], groupings_2015_lat_long$Latitude[105:106], pch= 17, col='midnightblue', cex=1.3)
+    legend("bottomleft", legend = c("1", "2", "3", "4", "5", "6", "7", "8", "9", "10"), pch = c(16,6,18,0,5,14,4,1,13,17), col = c('cyan3', 'blue', 'red', 'aquamarine4', 'deeppink1', 'coral','darkviolet','gray0','springgreen3','midnightblue'), cex = .7, title = "Groups", horiz=F, bg = "white")
+dev.off()
+
+
+pdf("map_of_2015_iso_no_shapes.pdf", width=5, height=5)
+map('state', region= c('new york', 'penn', 'vermont', 'ohio', 'indiana', 'new jersey', 'connecticut', 'massachusetts', 'new hampshire', 'maine', 'michigan', 'west virginia'),col='gray90', fill=T)
+    points(groupings_2015_lat_long$Logitude[1:19], groupings_2015_lat_long$Latitude[1:19], pch= 16, col='cyan3', cex=1)
+    points(groupings_2015_lat_long$Logitude[20:25], groupings_2015_lat_long$Latitude[20:25], pch= 16, col='blue', cex=1)
+    points(groupings_2015_lat_long$Logitude[26:55], groupings_2015_lat_long$Latitude[26:55], pch= 16, col='red', cex=1)
+    points(groupings_2015_lat_long$Logitude[56:68], groupings_2015_lat_long$Latitude[56:68], pch= 16, col='aquamarine4', cex=1)
+    points(groupings_2015_lat_long$Logitude[69:73], groupings_2015_lat_long$Latitude[69:73], pch= 16, col='deeppink1', cex=1)
+    points(groupings_2015_lat_long$Logitude[74:88], groupings_2015_lat_long$Latitude[74:88], pch= 16, col='coral', cex=1)
+    points(groupings_2015_lat_long$Logitude[89:92], groupings_2015_lat_long$Latitude[89:92], pch= 16, col='darkviolet', cex=1)
+    points(groupings_2015_lat_long$Logitude[93:99], groupings_2015_lat_long$Latitude[93:99], pch= 16, col='gray0', cex=1)
+    points(groupings_2015_lat_long$Logitude[100:104], groupings_2015_lat_long$Latitude[100:104], pch= 16, col='springgreen3', cex=1)
+    points(groupings_2015_lat_long$Logitude[105:106], groupings_2015_lat_long$Latitude[105:106], pch= 16, col='midnightblue', cex=1.3)
+    legend("bottomleft", legend = c("1", "2", "3", "4", "5", "6", "7", "8", "9", "10"), pch = c(16,16,16,16,16,16,16,16,16,16), col = c('cyan3', 'blue', 'red', 'aquamarine4', 'deeppink1', 'coral','darkviolet','gray0','springgreen3','midnightblue'), cex = .7, title = "Groups", horiz=F, bg = "white")
+dev.off()
+
+```

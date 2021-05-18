@@ -1,0 +1,125 @@
+---
+output: html_document
+editor_options: 
+  chunk_output_type: console
+---
+
+```{r}
+#Both 2015 and 2017
+
+lat_long_dist_meta_all <- read.delim("~/gbs_pop_work/m_americana_paper_snp/geographic_dist_work/lat_long_dist_meta_all.txt")
+
+
+
+longitude_all <- lat_long_dist_meta_all$Logitude
+latitude_all <- lat_long_dist_meta_all$Latitude
+
+lat_long_matrix_all <- SpatialPointsDataFrame(
+      matrix(c(longitude_all,latitude_all), ncol=2), data.frame(ID=seq(1:length(latitude_all))),
+      proj4string=CRS("+proj=longlat +ellps=WGS84 +datum=WGS84"))
+
+mdist_all <- distm(lat_long_matrix_all)
+
+hclustering_all <- hclust(as.dist(mdist_all), method="complete")
+
+#set distance cutoff to 50miles or 25 miles
+
+distance_all = 2*(80467)
+distamce_all = 40233.5
+  
+lat_long_matrix_all$clust <- cutree(hclustering_all, h=distance_all)
+
+id <-lat_long_matrix_all$ID
+clust <- lat_long_matrix_all$clust
+clusters <- as.matrix(c(id, clust), ncol = 2)
+
+
+lat_long_dist_meta_all$X.2 <- clust
+
+write.csv(lat_long_dist_meta_all,"~/gbs_pop_work/m_americana_paper_snp/geographic_dist_work/lat_long_dist_meta_all_with_group.txt")
+
+```
+
+```{r}
+#both 2015 and 2017 and clone corrected!!!
+
+lat_long_dist_meta_cc <- read.delim("~/gbs_pop_work/m_americana_paper_snp/geographic_dist_work/lat_long_dist_meta_cc.txt")
+
+latitide_cc <- lat_long_dist_meta_cc$Latitude
+longitude_cc <- lat_long_dist_meta_cc$Logitude
+
+lat_long_matrix_cc <- SpatialPointsDataFrame(
+      matrix(c(longitude_cc, latitide_cc), ncol=2), data.frame(ID=seq(1:length(latitide_cc))),
+      proj4string=CRS("+proj=longlat +ellps=WGS84 +datum=WGS84"))
+
+mdist_cc <- distm(lat_long_matrix_cc)
+
+hclustering_cc <- hclust(as.dist(mdist_cc), method="complete")
+
+#set distance cutoff to 50miles or 25 miles
+
+distance_cc = 80467
+distance_cc = 40233.5
+  
+lat_long_matrix_cc$id <- cutree(hclustering_cc, h=distance_cc)
+
+
+
+
+lat_long_dist_meta_cc$id <- lat_long_matrix_cc$id
+colnames(lat_long_dist_meta_cc) <- c("sample", "latitude", "longitude", "clust")
+```
+
+```{r}
+#mine, both 2015 alone 
+
+lat_long_dist_meta_2015 <- read.delim("~/gbs_pop_work/m_americana_paper_snp/geographic_dist_work/lat_long_dist_meta_2015.txt")
+
+latitide_2015 <- lat_long_dist_meta_2015$Latitude 
+longitude_2015 <- lat_long_dist_meta_2015$Logitude
+
+lat_long_matrix_2015 <- SpatialPointsDataFrame(
+      matrix(c(longitude_2015, latitide_2015), ncol=2), data.frame(ID=seq(1:length(latitide_2015))),
+      proj4string=CRS("+proj=longlat +ellps=WGS84 +datum=WGS84"))
+
+mdist_2015 <- distm(lat_long_matrix_2015)
+
+hclustering_2015 <- hclust(as.dist(mdist_2015), method="complete")
+
+#set distance cutoff to 50miles or 25 miles
+
+distance_2015 = 80467
+distance_2015 = 40233.5
+  
+lat_long_dist_meta_2015$cluster <- cutree(hclustering_2015, h=distance_2015)
+
+
+
+```
+
+```{r}
+#mine, both 2015 alone AND Clone Corrected!!!
+
+lat_long_dist_meta_2015_cc <- read.delim("~/gbs_pop_work/m_americana_paper_snp/geographic_dist_work/lat_long_dist_meta_cc_2015.txt")
+
+longitude_2015_cc <- lat_long_dist_meta_2015_cc$Logitude
+latitide_2015_cc <- lat_long_dist_meta_2015_cc$Latitude
+
+lat_long_matrix_2015_cc <- SpatialPointsDataFrame(
+      matrix(c(longitude_2015_cc, latitide_2015_cc), ncol=2), data.frame(ID=seq(1:length(latitide_2015_cc))),
+      proj4string=CRS("+proj=longlat +ellps=WGS84 +datum=WGS84"))
+
+mdist_2015_cc <- distm(lat_long_matrix_2015_cc)
+
+hclustering_2015_cc <- hclust(as.dist(mdist_2015_cc), method="complete")
+
+#set distance cutoff to 50miles or 25 miles
+
+distance_2015_cc = 80467
+distance_2015_cc = 40233.5
+  
+lat_long_dist_meta_2015_cc$cluster <- cutree(hclustering_2015_cc, h=distance_2015_cc)
+
+write.csv(lat_long_dist_meta_2015_cc, "~/gbs_pop_work/m_americana_paper_snp/geographic_dist_work/lat_long_dist_meta_2015_cc_filled_in.txt")
+
+```
